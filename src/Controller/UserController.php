@@ -35,6 +35,30 @@ final class UserController extends AbstractController
             return new JsonResponse(['error' => 'Passwort und Bestätigung passen nicht überein'], 400);
         }
 
+        $password = $data['password'];
+
+        $errors = [];
+
+        if (strlen($password) < 8) {
+            $errors[] = 'Passwort muss mindestens 8 Zeichen lang sein.';
+        }
+
+        if (!preg_match('/[A-Z]/', $password)) {
+            $errors[] = 'Passwort muss mindestens einen Großbuchstaben enthalten.';
+        }
+
+        if (!preg_match('/[a-z]/', $password)) {
+            $errors[] = 'Passwort muss mindestens einen Kleinbuchstaben enthalten.';
+        }
+
+        if (!preg_match('/[0-9]/', $password)) {
+            $errors[] = 'Passwort muss mindestens eine Zahl enthalten.';
+        }
+
+        if (!empty($errors)) {
+            return new JsonResponse(['error' => $errors], 400);
+        }
+
         $user = $em->getRepository(UserEntity::class)->findOneBy(['email' => $data['email']]);
 
         if (!$user) {
@@ -180,5 +204,5 @@ final class UserController extends AbstractController
 
         return new JsonResponse(['message'=>'User Ausgelogt']);
     }
+} 
 
-}
