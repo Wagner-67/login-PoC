@@ -8,3 +8,7 @@ api_login_check:
   path: /api/login_check
   methods: [POST]
   controller: App\Controller\SecurityController::login
+
+api_refresh_token:
+    path: /api/token/refresh
+
