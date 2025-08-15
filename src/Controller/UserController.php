@@ -88,8 +88,59 @@ final class UserController extends AbstractController
 
         return new JsonResponse(['message'=>'Dein Account wurde erfolgreich verifiziert!']);
     }
+
     #[Route('/api/greetings', methods: ['GET'])]
     public function test(): JsonResponse {
         return new JsonResponse(['message'=>'Hello World']);
     }
+
+    #[Route('/account/resend_verify_mail', name: 'account_resend_verify_mail', methods: ['POST'])]
+    public function resend(
+        Request $reuqest,
+        EntityManagerInterface $em,
+        MailerInterface $mailer
+    ): JsonResponse {
+
+        $data = json_decode($request->getContent(), true);
+
+        $user = $em->getRepository(UserEntity::class)->findOneBy(['email'=>$data['email']]);
+
+        if (empty($data['email'])) {
+            return new JsonResponse(['error'=>'Du musst eine Email angeben']);
+        }
+
+        if (!$user) {
+            return new JsonResponse(['error'=>'Deine Email ist nicht Registriert']);
+        }
+
+        if ($user->isVerified()){
+            return new JsonResponse(['error'=>'diese Email ist bereits verifiziert']);
+        }
+
+        if (!$token) {
+            return new JsonResponse(['error' => 'Kein Verifizierungstoken vorhanden.']);
+        }
+
+        $token = $user->getVerificationToken();
+
+        $verificationUrl = $this->generateUrl(
+            'verify_account',
+            ['token' => $token],
+            UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+            $email = (new Email())
+            ->from('p73583347@gmail.com')
+            ->to($data['email'])
+            ->subject('Account Verifizierung')
+            ->html("<p>Bitte bestätige deine Account-Verifizierung mit folgendem Link:</p>
+                    <p><a href=\"$verificationUrl\">Account verifizieren</a></p>
+                    <p>Solltest du dich nicht registriert haben, ignoriere bitte diese Nachricht.</p>");
+
+            $mailer->send($email);
+
+            return new JsonResponse(['message' => 'Verifizierungs-E-Mail erneut gesendet.']);
+            
+    }
+
 }
