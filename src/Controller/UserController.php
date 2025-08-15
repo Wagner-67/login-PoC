@@ -3,17 +3,18 @@
 namespace App\Controller;
 
 use App\Entity\UserEntity;
+use Symfony\Component\Uid\Uuid;
+use Symfony\Component\Mime\Email;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Mailer\MailerInterface;
-use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\RateLimiter\RateLimiterFactory;
+use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken;
+use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
-use Symfony\Component\RateLimiter\RateLimiterFactory;
-use Symfony\Component\Mime\Email;
 
 final class UserController extends AbstractController
 {
@@ -155,6 +156,29 @@ final class UserController extends AbstractController
 
             return new JsonResponse(['message' => 'Verifizierungs-E-Mail erneut gesendet.']);
             
+    }
+
+    #[Route('/account/logout', name: 'account_logout', methods: ['GET'])]
+    public function logout(
+        Request $request,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Not authenticated']);
+        }
+
+        $username = $user->getUserIdentifier();
+
+        $refreshEntity = $em->getRepository(RefreshToken::class)->findOneBy(['username' => $username]);
+
+        if ($refreshEntity) {
+            $em->remove($refreshEntity);
+            $em->flush();
+        }
+
+        return new JsonResponse(['message'=>'User Ausgelogt']);
     }
 
 }

@@ -36,6 +36,7 @@ security:
             lazy: true
             provider: app_user_provider
             stateless: true
+            jwt: ~
 
     access_control:
         # - { path: ^/admin, roles: ROLE_ADMIN }
