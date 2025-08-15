@@ -18,11 +18,6 @@ security:
                 failure_handler: lexik_jwt_authentication.handler.authentication_failure
                 username_path: email
                 password_path: password
-            jwt: ~
-            refresh_jwt:
-                check_path: /api/token/refresh
-            entry_point: jwt
-
 
         dev:
             pattern: ^/(_(profiler|wdt)|css|images|js)/
@@ -34,6 +29,8 @@ security:
             provider: app_user_provider
             entry_point: jwt
             jwt: ~
+            refresh_jwt:
+                check_path: /api/token/refresh
 
         main:
             lazy: true

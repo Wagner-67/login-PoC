@@ -10,6 +10,7 @@ services:
                 - 'account_register_new_user'
                 - 'login_check'
                 - 'verify_account'
+                - 'account_resend_verify_mail'
         tags:
             - { name: kernel.event_listener, event: kernel.controller }
 

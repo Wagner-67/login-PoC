@@ -90,8 +90,22 @@ final class UserController extends AbstractController
     }
 
     #[Route('/api/greetings', methods: ['GET'])]
-    public function test(): JsonResponse {
-        return new JsonResponse(['message'=>'Hello World']);
+    public function test(): JsonResponse
+    {
+        $user = $this->getUser();
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'Not authenticated'], 401);
+        }
+
+        return new JsonResponse([
+            'message' => sprintf(
+                'Hello %s',
+                $user->getName() ?? $user->getUserIdentifier()
+            ),
+            'user_id' => $user->getUserid(),
+            'email'   => $user->getEmail(),
+        ]);
     }
 
     #[Route('/account/resend_verify_mail', name: 'account_resend_verify_mail', methods: ['POST'])]
