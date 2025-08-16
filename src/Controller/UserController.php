@@ -204,5 +204,58 @@ final class UserController extends AbstractController
 
         return new JsonResponse(['message'=>'User Ausgelogt']);
     }
+
+    #[Route('/account/password_change', name: 'account_password_change', methods: ['POST'])]
+    public function email_send (
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher,
+        MailerInterface $mailer
+    ): JsonResponse {
+
+        $data = json_decode($request->getContent(), true);
+
+        $user = $em->getRepository(UserEntity::class)->findOneBy(['email'=>$data['email']]);
+
+        $tokenEm = $em->getRepository(PasswordResetToken::class);
+
+        if (!$user) {
+            return new JsonResponse(['error'=>'Kein User Registriert']);
+        }
+
+        if (empty($data['email'])) {
+            return new JsonResponse(['error'=>'Du musst die Email deines Accounts angeben!']);
+        }
+        
+        $userid = $user->getUserid();
+
+        $token = Uuid::v4()->toRfc4122();
+
+        $tokenEm = new PasswordResetToken();
+        $tokenEm->setUserid($userid);
+        $tokenEm->setRefreshTokens($token);
+
+
+        $verificationUrl = $this->generateUrl(
+        ['token' => $token],
+        UrlGeneratorInterface::ABSOLUTE_URL
+        );
+
+        $email = (new Email())
+            ->from('p73583347@gmail.com')
+            ->to($data['email'])
+            ->subject('Passwort zurücksetzen')
+            ->html("
+                <p>Hallo,</p>
+                <p>du hast eine Anfrage zum Zurücksetzen deines Passworts gestellt.</p>
+                <p>Klicke auf den folgenden Link, um ein neues Passwort festzulegen:</p>
+                <p><a href=\"$verificationUrl\">Passwort jetzt zurücksetzen</a></p>
+                <p>Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail einfach ignorieren.</p>");
+
+            $mailer->send($email);
+
+            return new JsonResponse(['message' => 'Benutzer Registriert']);
+
+    }
 } 
 
