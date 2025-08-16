@@ -234,7 +234,16 @@ final class UserController extends AbstractController
         $tokenEm = new PasswordResetToken();
         $tokenEm->setUserid($userid);
         $tokenEm->setRefreshTokens($token);
+        $tokenEm->setUsed(false);
 
+        $now = new \DateTime();
+        $tokenEm->setTimestamp($now);
+
+        $expiresAt = (clone $now)->modify('+24 hours');
+        $tokenEm->setExpiresAt($expiresAt);
+
+        $em->persist($tokenEm);
+        $em->flush();
 
         $verificationUrl = $this->generateUrl(
         ['token' => $token],
@@ -256,6 +265,55 @@ final class UserController extends AbstractController
 
             return new JsonResponse(['message' => 'Benutzer Registriert']);
 
+    }
+
+    #[Route('/password-reset/{token}', name: 'password_reset', methods: ['POST'])]
+    public function reset(
+        string $token,
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse {
+
+        $tokenEm = $em->getRepository(PasswordResetToken::class)->findOneBy(['refreshTokens' => $token]);
+
+        if (!$tokenEm) {
+            return new JsonResponse(['error' => 'Ungültiger Verifizierungslink.'], 404);
+        }
+
+        if ($tokenEm->isUsed()) {
+            return new JsonResponse(['error' => 'Token bereits benutzt'], 400);
+        }
+
+        if ($tokenEm->getExpiresAt() < new \DateTime()) {
+            return new JsonResponse(['error' => 'Token ist abgelaufen'], 400);
+        }
+
+        $data = json_decode($request->getContent(), true);
+
+        if (empty($data['password']) || empty($data['password_confirmation'])) {
+            return new JsonResponse(['error' => 'Passwort und Bestätigung muss ausgefüllt sein!'], 400);
+        }
+
+        if ($data['password'] !== $data['password_confirmation']) {
+            return new JsonResponse(['error' => 'Passwörter stimmen nicht überein!'], 400);
+        }
+
+        $user = $em->getRepository(UserEntity::class)->findOneBy(['userid' => $tokenEm->getUserId()]);
+
+        if (!$user) {
+            return new JsonResponse(['error' => 'User nicht gefunden!'], 404);
+        }
+
+        $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
+        $user->setPassword($hashedPassword);
+        $em->persist($user);
+
+        $em->remove($tokenEm);
+
+        $em->flush();
+
+        return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
 } 
 

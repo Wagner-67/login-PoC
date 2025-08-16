@@ -13,17 +13,24 @@ class PasswordResetToken
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $refresh_tokens = null;
+    #[ORM\Column(name: "refresh_tokens", length: 255)]
+    private ?string $refreshTokens = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $user_id = null;
+    #[ORM\Column(name: "user_id", length: 255)]
+    private ?string $userId = null;
 
-    #[ORM\Column]
+    #[ORM\Column(type: 'datetime')]
     private ?\DateTime $timestamp = null;
 
+    #[ORM\Column(type: 'datetime')]
+    private ?\DateTime $expiresAt = null;
+
     #[ORM\Column]
-    private ?bool $used = null;
+    private bool $used = false;
+
+    // -------------------
+    // GETTER / SETTER
+    // -------------------
 
     public function getId(): ?int
     {
@@ -32,25 +39,23 @@ class PasswordResetToken
 
     public function getRefreshTokens(): ?string
     {
-        return $this->refresh_tokens;
+        return $this->refreshTokens;
     }
 
-    public function setRefreshTokens(string $refresh_tokens): static
+    public function setRefreshTokens(string $refreshTokens): static
     {
-        $this->refresh_tokens = $refresh_tokens;
-
+        $this->refreshTokens = $refreshTokens;
         return $this;
     }
 
     public function getUserId(): ?string
     {
-        return $this->user_id;
+        return $this->userId;
     }
 
-    public function setUserId(string $user_id): static
+    public function setUserId(string $userId): static
     {
-        $this->user_id = $user_id;
-
+        $this->userId = $userId;
         return $this;
     }
 
@@ -62,11 +67,21 @@ class PasswordResetToken
     public function setTimestamp(\DateTime $timestamp): static
     {
         $this->timestamp = $timestamp;
-
         return $this;
     }
 
-    public function isUsed(): ?bool
+    public function getExpiresAt(): ?\DateTime
+    {
+        return $this->expiresAt;
+    }
+
+    public function setExpiresAt(\DateTime $expiresAt): static
+    {
+        $this->expiresAt = $expiresAt;
+        return $this;
+    }
+
+    public function isUsed(): bool
     {
         return $this->used;
     }
@@ -74,7 +89,6 @@ class PasswordResetToken
     public function setUsed(bool $used): static
     {
         $this->used = $used;
-
         return $this;
     }
 }
