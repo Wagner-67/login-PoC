@@ -35,8 +35,8 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(type: 'string', nullable: true)]
     private ?string $verificationToken = null;
 
-    #[ORM\Column(type: 'string', length: 36, unique: true)]
-    private ?string $user_id = null;
+    #[ORM\Column(name: 'user_id', type: 'string', length: 36, unique: true)]
+    private ?string $userid = null;
 
     public function __construct()
     {

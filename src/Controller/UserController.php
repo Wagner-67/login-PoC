@@ -5,6 +5,7 @@ namespace App\Controller;
 use App\Entity\UserEntity;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Mime\Email;
+use App\Entity\PasswordResetToken;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mailer\MailerInterface;
@@ -246,6 +247,7 @@ final class UserController extends AbstractController
         $em->flush();
 
         $verificationUrl = $this->generateUrl(
+        'password_reset',
         ['token' => $token],
         UrlGeneratorInterface::ABSOLUTE_URL
         );
