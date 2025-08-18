@@ -11,11 +11,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
+use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 final class UserController extends AbstractController
 {
@@ -24,8 +26,14 @@ final class UserController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         UserPasswordHasherInterface $passwordHasher,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter,
         MailerInterface $mailer
     ): JsonResponse {
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
+
         $data = json_decode($request->getContent(), true);
 
         if (empty($data['email']) || empty($data['password']) || empty($data['name'])) {
@@ -61,6 +69,7 @@ final class UserController extends AbstractController
         }
 
         $user = $em->getRepository(UserEntity::class)->findOneBy(['email' => $data['email']]);
+
 
         if (!$user) {
 
@@ -99,8 +108,17 @@ final class UserController extends AbstractController
     }
 
     #[Route('/verify-account/{token}', name: 'verify_account', methods: ['GET'])]
-    public function verify(string $token, Request $request, EntityManagerInterface $em
+    public function verify(
+        string $token,
+        Request $request,
+        EntityManagerInterface $em,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
     ): JsonResponse {
+
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
 
         $user = $em->getRepository(UserEntity::class)->findOneBy(['verificationToken' => $token]);
 
@@ -116,8 +134,16 @@ final class UserController extends AbstractController
     }
 
     #[Route('/api/greetings', methods: ['GET'])]
-    public function test(): JsonResponse
+    public function test(
+        Request $request,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
+    ): JsonResponse
     {
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
+
         $user = $this->getUser();
 
         if (!$user) {
@@ -136,10 +162,16 @@ final class UserController extends AbstractController
 
     #[Route('/account/resend_verify_mail', name: 'account_resend_verify_mail', methods: ['POST'])]
     public function resend(
-        Request $reuqest,
+        Request $request,
         EntityManagerInterface $em,
-        MailerInterface $mailer
+        MailerInterface $mailer,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
     ): JsonResponse {
+
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
 
         $data = json_decode($request->getContent(), true);
 
@@ -157,11 +189,11 @@ final class UserController extends AbstractController
             return new JsonResponse(['error'=>'diese Email ist bereits verifiziert']);
         }
 
+        $token = $user->getVerificationToken();
+
         if (!$token) {
             return new JsonResponse(['error' => 'Kein Verifizierungstoken vorhanden.']);
         }
-
-        $token = $user->getVerificationToken();
 
         $verificationUrl = $this->generateUrl(
             'verify_account',
@@ -169,7 +201,7 @@ final class UserController extends AbstractController
             UrlGeneratorInterface::ABSOLUTE_URL
         );
 
-            $email = (new Email())
+        $email = (new Email())
             ->from('p73583347@gmail.com')
             ->to($data['email'])
             ->subject('Account Verifizierung')
@@ -177,17 +209,22 @@ final class UserController extends AbstractController
                     <p><a href=\"$verificationUrl\">Account verifizieren</a></p>
                     <p>Solltest du dich nicht registriert haben, ignoriere bitte diese Nachricht.</p>");
 
-            $mailer->send($email);
+        $mailer->send($email);
 
-            return new JsonResponse(['message' => 'Verifizierungs-E-Mail erneut gesendet.']);
-            
+        return new JsonResponse(['message' => 'Verifizierungs-E-Mail erneut gesendet.']);
     }
 
     #[Route('/account/logout', name: 'account_logout', methods: ['GET'])]
     public function logout(
         Request $request,
-        EntityManagerInterface $em
+        EntityManagerInterface $em,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
     ): JsonResponse {
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
+
         $user = $this->getUser();
 
         if (!$user) {
@@ -211,8 +248,14 @@ final class UserController extends AbstractController
         Request $request,
         EntityManagerInterface $em,
         UserPasswordHasherInterface $passwordHasher,
-        MailerInterface $mailer
+        MailerInterface $mailer,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
     ): JsonResponse {
+
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
 
         $data = json_decode($request->getContent(), true);
 
@@ -247,9 +290,9 @@ final class UserController extends AbstractController
         $em->flush();
 
         $verificationUrl = $this->generateUrl(
-        'password_reset',
-        ['token' => $token],
-        UrlGeneratorInterface::ABSOLUTE_URL
+            'password_reset',
+            ['token' => $token],
+            UrlGeneratorInterface::ABSOLUTE_URL
         );
 
         $email = (new Email())
@@ -263,10 +306,9 @@ final class UserController extends AbstractController
                 <p><a href=\"$verificationUrl\">Passwort jetzt zurücksetzen</a></p>
                 <p>Falls du diese Anfrage nicht gestellt hast, kannst du diese E-Mail einfach ignorieren.</p>");
 
-            $mailer->send($email);
+        $mailer->send($email);
 
-            return new JsonResponse(['message' => 'Benutzer Registriert']);
-
+        return new JsonResponse(['message' => 'Falls ein Account mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.']);
     }
 
     #[Route('/password-reset/{token}', name: 'password_reset', methods: ['POST'])]
@@ -274,8 +316,14 @@ final class UserController extends AbstractController
         string $token,
         Request $request,
         EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        UserPasswordHasherInterface $passwordHasher,
+        #[Autowire(service: 'limiter.anonymous_api')] RateLimiterFactory $anonymousApiLimiter
     ): JsonResponse {
+
+        $limiter = $anonymousApiLimiter->create($request->getClientIp());
+        if (!$limiter->consume(1)->isAccepted()) {
+            throw new TooManyRequestsHttpException();
+        }
 
         $tokenEm = $em->getRepository(PasswordResetToken::class)->findOneBy(['refreshTokens' => $token]);
 
@@ -294,17 +342,17 @@ final class UserController extends AbstractController
         $data = json_decode($request->getContent(), true);
 
         if (empty($data['password']) || empty($data['password_confirmation'])) {
-            return new JsonResponse(['error' => 'Passwort und Bestätigung muss ausgefüllt sein!'], 400);
+            return new JsonResponse(['error' => 'Der Link ist ungültig oder abgelaufen!'], 400);
         }
 
         if ($data['password'] !== $data['password_confirmation']) {
-            return new JsonResponse(['error' => 'Passwörter stimmen nicht überein!'], 400);
+            return new JsonResponse(['error' => 'Ungültige Eingabedaten!'], 400);
         }
 
         $user = $em->getRepository(UserEntity::class)->findOneBy(['userid' => $tokenEm->getUserId()]);
 
         if (!$user) {
-            return new JsonResponse(['error' => 'User nicht gefunden!'], 404);
+            return new JsonResponse(['error' => 'Ungültige Eingabedaten!'], 404);
         }
 
         $hashedPassword = $passwordHasher->hashPassword($user, $data['password']);
@@ -317,5 +365,4 @@ final class UserController extends AbstractController
 
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
-} 
-
+}

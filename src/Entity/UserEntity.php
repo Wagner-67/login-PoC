@@ -40,16 +40,14 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function __construct()
     {
-        // Automatisch eindeutige user_id setzen
-        $this->user_id = Uuid::v4()->toRfc4122();
+   
+        $this->userid = Uuid::v4()->toRfc4122();
     }
 
     public function getUserId(): ?string
     {
         return $this->user_id;
     }
-
-    // kein Setter nötig, da automatisch generiert
 
     public function getId(): ?int
     {
