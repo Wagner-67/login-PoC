@@ -21,7 +21,7 @@ use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
 
 final class UserController extends AbstractController
 {
-    #[Route('/account/register_new_user', name: 'account_register_new_user', methods: ['POST'])]
+    #[Route('/public/register_new_user', name: 'public_register_new_user', methods: ['POST'])]
     public function create(
         Request $request,
         EntityManagerInterface $em,
@@ -107,7 +107,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['error' => 'Ein Benutzer mit dieser Email existiert bereits'], 400);
     }
 
-    #[Route('/verify-account/{token}', name: 'verify_account', methods: ['GET'])]
+    #[Route('/public/verify-account/{token}', name: 'verify_account', methods: ['GET'])]
     public function verify(
         string $token,
         Request $request,
@@ -160,7 +160,7 @@ final class UserController extends AbstractController
         ]);
     }
 
-    #[Route('/account/resend_verify_mail', name: 'account_resend_verify_mail', methods: ['POST'])]
+    #[Route('/public/resend_verify_mail', name: 'public_resend_verify_mail', methods: ['POST'])]
     public function resend(
         Request $request,
         EntityManagerInterface $em,
@@ -214,7 +214,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Verifizierungs-E-Mail erneut gesendet.']);
     }
 
-    #[Route('/account/logout', name: 'account_logout', methods: ['GET'])]
+    #[Route('/auth/logout', name: 'auth_logout', methods: ['GET'])]
     public function logout(
         Request $request,
         EntityManagerInterface $em,
@@ -243,7 +243,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['message'=>'User Ausgelogt']);
     }
 
-    #[Route('/account/password_change', name: 'account_password_change', methods: ['POST'])]
+    #[Route('/public/password_change', name: 'public_password_change', methods: ['POST'])]
     public function email_send (
         Request $request,
         EntityManagerInterface $em,
@@ -311,7 +311,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Falls ein Account mit dieser E-Mail existiert, wurde ein Link zum Zurücksetzen gesendet.']);
     }
 
-    #[Route('/password-reset/{token}', name: 'password_reset', methods: ['POST'])]
+    #[Route('/public/password-reset/{token}', name: 'password_reset', methods: ['POST'])]
     public function reset(
         string $token,
         Request $request,
@@ -366,7 +366,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
 
-#[Route('/account/mfa', name: 'account_mfa', methods: ['POST'])]
+#[Route('/public/mfa', name: 'public_mfa', methods: ['POST'])]
 public function enableMfa(
     Request $request,
     EntityManagerInterface $em,
