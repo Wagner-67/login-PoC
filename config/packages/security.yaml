@@ -24,7 +24,7 @@ security:
             security: false
 
         api:
-            pattern: ^/api
+            pattern: ^/(account|api)
             stateless: true
             provider: app_user_provider
             entry_point: jwt
@@ -39,9 +39,10 @@ security:
             jwt: ~
 
     access_control:
-        # - { path: ^/admin, roles: ROLE_ADMIN }
-        # - { path: ^/profile, roles: ROLE_USER }
-        - { path: ^/api/(login_check|token/refresh), roles: PUBLIC_ACCESS }
+        - { path: ^/account/(login_check|token/refresh), roles: PUBLIC_ACCESS }
+
+        - { path: ^/account, roles: ROLE_USER }
+        - { path: ^/account/register_new_user, role: ROLE_USER  }
         
 when@test:
     security:

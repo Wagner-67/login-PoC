@@ -365,4 +365,45 @@ final class UserController extends AbstractController
 
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
+
+#[Route('/account/mfa', name: 'account_mfa', methods: ['POST'])]
+public function enableMfa(
+    Request $request,
+    EntityManagerInterface $em,
+    UserPasswordHasherInterface $passwordHasher,
+    DeviceService $deviceService
+): JsonResponse {
+    $user = $this->getUser();
+
+    $userId = $user->getUserId();
+
+    $existingMfa = $em->getRepository(Mfa::class)->findOneBy([
+        'user_id' => $userId,
+    ]);
+
+    if ($existingMfa) {
+        return new JsonResponse([
+            'status' => 'exists',
+            'message' => 'MFA already enabled for this userId',
+        ]);
+    }
+
+    $rawFingerprint = $deviceService->getFingerprint($request);
+
+    $mfa = new Mfa();
+    $mfa->setUserId($userId);
+
+    $hashedFingerprint = $passwordHasher->hashPassword($mfa, $rawFingerprint);
+    $mfa->setFingerPrint($hashedFingerprint);
+    $mfa->setSuspicious(false);
+
+    $em->persist($mfa);
+    $em->flush();
+
+    return new JsonResponse([
+        'status' => 'ok',
+        'message' => 'MFA enabled and device trusted',
+    ]);
+}
+
 }

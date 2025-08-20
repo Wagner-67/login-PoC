@@ -13,7 +13,7 @@ class PasswordResetToken
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(name: "refresh_tokens", length: 255)]
+    #[ORM\Column(name: "resetesh_tokens", length: 255)]
     private ?string $refreshTokens = null;
 
     #[ORM\Column(name: "user_id", length: 255)]
