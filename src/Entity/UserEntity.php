@@ -46,7 +46,7 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
 
     public function getUserId(): ?string
     {
-        return $this->user_id;
+        return $this->userid;
     }
 
     public function getId(): ?int

@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\Mfa;
 use App\Entity\UserEntity;
 use Symfony\Component\Uid\Uuid;
 use Symfony\Component\Mime\Email;
@@ -11,13 +12,13 @@ use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Mailer\MailerInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\RateLimiter\RateLimiterFactory;
 use Gesdinet\JWTRefreshTokenBundle\Entity\RefreshToken;
+use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\HttpKernel\Exception\TooManyRequestsHttpException;
+use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 final class UserController extends AbstractController
 {
@@ -366,44 +367,50 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
 
-#[Route('/public/mfa', name: 'public_mfa', methods: ['POST'])]
-public function enableMfa(
-    Request $request,
-    EntityManagerInterface $em,
-    UserPasswordHasherInterface $passwordHasher,
-    DeviceService $deviceService
-): JsonResponse {
-    $user = $this->getUser();
+    #[Route('/auth/mfa', name: 'auth_mfa', methods: ['POST'])]
+    public function enableMfa(
+        Request $request,
+        EntityManagerInterface $em,
+        UserPasswordHasherInterface $passwordHasher
+    ): JsonResponse {
+        $user = $this->getUser();
+        $userId = $user->getUserId();
 
-    $userId = $user->getUserId();
 
-    $existingMfa = $em->getRepository(Mfa::class)->findOneBy([
-        'user_id' => $userId,
-    ]);
+        // Prüfen, ob MFA schon existiert
+        $existingMfa = $em->getRepository(Mfa::class)->findOneBy([
+            'userId' => $userId,
+        ]);
 
-    if ($existingMfa) {
+        if ($existingMfa) {
+            return new JsonResponse([
+                'status' => 'exists',
+                'message' => 'MFA already enabled for this userId',
+            ]);
+        }
+
+        // Fingerprint direkt im Controller generieren
+        $rawFingerprint = hash(
+            'sha256',
+            $request->getClientIp() . $request->headers->get('User-Agent')
+        );
+
+        $mfa = new Mfa();
+        $mfa->setUserId($userId);
+
+        $hashedFingerprint = password_hash($rawFingerprint, PASSWORD_DEFAULT);
+        $mfa->setFingerPrint($hashedFingerprint);
+
+        $mfa->setSuspicious(false);
+
+        $em->persist($mfa);
+        $em->flush();
+
         return new JsonResponse([
-            'status' => 'exists',
-            'message' => 'MFA already enabled for this userId',
+            'status' => 'ok',
+            'message' => 'MFA enabled and device trusted',
         ]);
     }
 
-    $rawFingerprint = $deviceService->getFingerprint($request);
-
-    $mfa = new Mfa();
-    $mfa->setUserId($userId);
-
-    $hashedFingerprint = $passwordHasher->hashPassword($mfa, $rawFingerprint);
-    $mfa->setFingerPrint($hashedFingerprint);
-    $mfa->setSuspicious(false);
-
-    $em->persist($mfa);
-    $em->flush();
-
-    return new JsonResponse([
-        'status' => 'ok',
-        'message' => 'MFA enabled and device trusted',
-    ]);
-}
 
 }
