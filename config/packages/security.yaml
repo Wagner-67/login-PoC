@@ -39,10 +39,18 @@ security:
             jwt: ~
 
     access_control:
-        - { path: ^/account/(login_check|token/refresh), roles: PUBLIC_ACCESS }
+        - { path: ^/account/(login_check|token/refresh), roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/account/register_new_user, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/account/verify_account, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/account/resend_verify_mail, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/account/password_change, roles: IS_AUTHENTICATED_ANONYMOUSLY }
+        - { path: ^/password-reset, roles: IS_AUTHENTICATED_ANONYMOUSLY }
 
+        - { path: ^/account/logout, roles: ROLE_USER }
+        - { path: ^/account/mfa, roles: ROLE_USER }
+        - { path: ^/api/greetings, roles: ROLE_USER }
         - { path: ^/account, roles: ROLE_USER }
-        - { path: ^/account/register_new_user, role: ROLE_USER  }
+
         
 when@test:
     security:
