@@ -7,10 +7,9 @@ services:
     App\EventListener\AccountVerifiedListener:
         arguments:
             $whitelistedRoutes:
-                - 'account_register_new_user'
-                - 'login_check'
-                - 'verify_account'
-                - 'account_resend_verify_mail'
+                - 'public_register_new_user'
+                - 'public_verify_account'
+                - 'public_resend_verify_mail'
         tags:
             - { name: kernel.event_listener, event: kernel.controller }
 

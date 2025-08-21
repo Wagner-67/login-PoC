@@ -71,7 +71,6 @@ final class UserController extends AbstractController
 
         $user = $em->getRepository(UserEntity::class)->findOneBy(['email' => $data['email']]);
 
-
         if (!$user) {
 
             $user = new UserEntity();
@@ -108,7 +107,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['error' => 'Ein Benutzer mit dieser Email existiert bereits'], 400);
     }
 
-    #[Route('/public/verify-account/{token}', name: 'verify_account', methods: ['GET'])]
+    #[Route('/public/verify-account/{token}', name: 'public_verify_account', methods: ['GET'])]
     public function verify(
         string $token,
         Request $request,
@@ -370,14 +369,12 @@ final class UserController extends AbstractController
     #[Route('/auth/mfa', name: 'auth_mfa', methods: ['POST'])]
     public function enableMfa(
         Request $request,
-        EntityManagerInterface $em,
-        UserPasswordHasherInterface $passwordHasher
+        EntityManagerInterface $em
     ): JsonResponse {
         $user = $this->getUser();
+
         $userId = $user->getUserId();
 
-
-        // Prüfen, ob MFA schon existiert
         $existingMfa = $em->getRepository(Mfa::class)->findOneBy([
             'userId' => $userId,
         ]);
@@ -389,7 +386,6 @@ final class UserController extends AbstractController
             ]);
         }
 
-        // Fingerprint direkt im Controller generieren
         $rawFingerprint = hash(
             'sha256',
             $request->getClientIp() . $request->headers->get('User-Agent')
@@ -407,10 +403,7 @@ final class UserController extends AbstractController
         $em->flush();
 
         return new JsonResponse([
-            'status' => 'ok',
             'message' => 'MFA enabled and device trusted',
         ]);
     }
-
-
 }
