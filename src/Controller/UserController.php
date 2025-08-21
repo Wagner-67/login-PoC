@@ -366,7 +366,7 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
 
-    #[Route('/auth/mfa', name: 'auth_mfa', methods: ['POST'])]
+    #[Route('/auth/mfa', name: 'auth_mfa', methods: ['GET'])]
     public function enableMfa(
         Request $request,
         EntityManagerInterface $em
