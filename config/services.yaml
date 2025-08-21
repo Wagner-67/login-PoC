@@ -5,13 +5,8 @@ services:
 
     # Event Listener für Account Verified
     App\EventListener\AccountVerifiedListener:
-        arguments:
-            $whitelistedRoutes:
-                - 'public_register_new_user'
-                - 'public_verify_account'
-                - 'public_resend_verify_mail'
         tags:
-            - { name: kernel.event_listener, event: kernel.controller, method: onKernelController }
+            - { name: 'kernel.event_subscriber' }
 
     App\EventListener\DeviceCheckListener:
         tags:

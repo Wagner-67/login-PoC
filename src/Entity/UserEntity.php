@@ -38,6 +38,9 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'user_id', type: 'string', length: 36, unique: true)]
     private ?string $userid = null;
 
+    #[ORM\Column(name: 'mfa_enabled', type: 'boolean')]
+    private bool $mfaenabled = false;
+
     public function __construct()
     {
    
@@ -73,6 +76,17 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
+        return $this;
+    }
+
+    public function isMfaEnabled(): ?bool
+    {
+        return $this->mfaenabled;
+    }
+
+    public function setMfaEnabled(?bool $mfaenabled): static
+    {
+        $this->mfaenabled = $mfaenabled;
         return $this;
     }
 

@@ -2,40 +2,30 @@
 
 namespace App\EventListener;
 
-use Symfony\Component\HttpKernel\Event\ControllerEvent;
-use Symfony\Component\HttpFoundation\JsonResponse;
-use Symfony\Component\Security\Core\Security;
+use Symfony\Component\Security\Core\User\UserInterface;
+use Symfony\Component\Security\Core\Exception\CustomUserMessageAuthenticationException;
+use Symfony\Component\Security\Http\Event\CheckPassportEvent;
+use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
-class AccountVerifiedListener
+class AccountVerifiedListener implements EventSubscriberInterface
 {
-    private array $whitelistedRoutes;
-    private Security $security;
-
-    public function __construct(Security $security, array $whitelistedRoutes = [])
+    public static function getSubscribedEvents(): array
     {
-        $this->security = $security;
-        $this->whitelistedRoutes = $whitelistedRoutes;
+        return [
+            CheckPassportEvent::class => 'onCheckPassport',
+        ];
     }
 
-public function onKernelController(ControllerEvent $event)
-{
-    $request = $event->getRequest();
-    $route = $request->attributes->get('_route');
+    public function onCheckPassport(CheckPassportEvent $event)
+    {
+        $user = $event->getPassport()->getUser();
 
-    if (in_array($route, $this->whitelistedRoutes)) {
-        return;
+        if ($user instanceof UserInterface && method_exists($user, 'isVerified')) {
+            if (!$user->isVerified()) {
+                throw new CustomUserMessageAuthenticationException(
+                    'Account nicht verifiziert'
+                );
+            }
+        }
     }
-
-    $user = $this->security->getUser();
-
-    if (!$user) {
-        return;
-    }
-
-    if (!$user->isVerified()) {
-        $event->setController(fn() => new JsonResponse(['error' => 'Account nicht verifiziert'], 403));
-        return;
-    }
-}
-
 }

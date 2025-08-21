@@ -28,7 +28,7 @@ security:
             security: false
 
         api:
-            pattern: ^/(auth|api)
+            pattern: ^/(auth)
             stateless: true
             provider: app_user_provider
             entry_point: jwt
@@ -47,7 +47,7 @@ security:
         
         - { path: ^/auth/, roles: ROLE_USER }
         
-        - { path: ^/api/, roles: ROLE_USER }
+        - { path: ^/api/, roles: IS_AUTHENTICATED_ANONYMOUSLYER }
 
 when@test:
     security:
