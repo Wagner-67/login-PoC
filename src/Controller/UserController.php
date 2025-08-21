@@ -86,7 +86,7 @@ final class UserController extends AbstractController
             $em->flush();
 
             $verificationUrl = $this->generateUrl(
-                'verify_account',
+                'public_verify_account',
                 ['token' => $token],
                 UrlGeneratorInterface::ABSOLUTE_URL
             );
