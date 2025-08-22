@@ -13,10 +13,10 @@ class Mfa
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(name: "user_id", length: 255)]
+    #[ORM\Column(name: 'user_id', length: 255)]
     private ?string $userId = null;
 
-    #[ORM\Column(name: "finger_print", length: 255)]
+    #[ORM\Column(name: 'finger_print', length: 255)]
     private ?string $fingerPrint = null;
 
     #[ORM\Column]

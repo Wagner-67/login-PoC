@@ -386,19 +386,13 @@ final class UserController extends AbstractController
             ]);
         }
 
-        $rawFingerprint = hash(
-            'sha256',
-            $request->getClientIp() . $request->headers->get('User-Agent')
-        );
+        $Fingerprint = $request->getClientIp() . $request->headers->get('User-Agent');
 
         $mfa = new Mfa();
+        $user->setMfaEnabled(true);
         $mfa->setUserId($userId);
-
-        $hashedFingerprint = password_hash($rawFingerprint, PASSWORD_DEFAULT);
-        $mfa->setFingerPrint($hashedFingerprint);
-
+        $mfa->setFingerPrint($Fingerprint);
         $mfa->setSuspicious(false);
-
         $em->persist($mfa);
         $em->flush();
 
