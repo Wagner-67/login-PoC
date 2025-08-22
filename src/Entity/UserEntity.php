@@ -38,12 +38,11 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     #[ORM\Column(name: 'user_id', type: 'string', length: 36, unique: true)]
     private ?string $userid = null;
 
-    #[ORM\Column(name: 'mfa_enabled', type: 'boolean')]
-    private bool $mfaenabled = false;
+    #[ORM\Column(type: 'boolean')]
+    private bool $twoFactorEnabled  = false;
 
     public function __construct()
     {
-   
         $this->userid = Uuid::v4()->toRfc4122();
     }
 
@@ -76,17 +75,6 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     public function setEmail(string $email): static
     {
         $this->email = $email;
-        return $this;
-    }
-
-    public function isMfaEnabled(): ?bool
-    {
-        return $this->mfaenabled;
-    }
-
-    public function setMfaEnabled(?bool $mfaenabled): static
-    {
-        $this->mfaenabled = $mfaenabled;
         return $this;
     }
 
@@ -123,6 +111,17 @@ class UserEntity implements UserInterface, PasswordAuthenticatedUserInterface
     public function setVerified(bool $verified): static
     {
         $this->verified = $verified;
+        return $this;
+    }
+
+    public function isTwoFactorEnabled(): bool
+    {
+        return $this->twoFactorEnabled;
+    }
+
+    public function setTwoFactorEnabled(bool $enabled): self
+    {
+        $this->twoFactorEnabled = $enabled;
         return $this;
     }
 

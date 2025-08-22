@@ -366,38 +366,14 @@ final class UserController extends AbstractController
         return new JsonResponse(['message' => 'Passwort erfolgreich zurückgesetzt.']);
     }
 
-    #[Route('/auth/mfa', name: 'auth_mfa', methods: ['GET'])]
-    public function enableMfa(
-        Request $request,
+    #[Route('/auth/TwoFactorAuth', name: 'auth_TwoFactorAuth', methods: ['GET'])]
+    public function enable2FA(
         EntityManagerInterface $em
     ): JsonResponse {
+
         $user = $this->getUser();
 
-        $userId = $user->getUserId();
+        $user = $em->getRepository(UserEntity::class)->find();
 
-        $existingMfa = $em->getRepository(Mfa::class)->findOneBy([
-            'userId' => $userId,
-        ]);
-
-        if ($existingMfa) {
-            return new JsonResponse([
-                'status' => 'exists',
-                'message' => 'MFA already enabled for this userId',
-            ]);
-        }
-
-        $Fingerprint = $request->getClientIp() . $request->headers->get('User-Agent');
-
-        $mfa = new Mfa();
-        $user->setMfaEnabled(true);
-        $mfa->setUserId($userId);
-        $mfa->setFingerPrint($Fingerprint);
-        $mfa->setSuspicious(false);
-        $em->persist($mfa);
-        $em->flush();
-
-        return new JsonResponse([
-            'message' => 'MFA enabled and device trusted',
-        ]);
     }
 }
