@@ -373,7 +373,16 @@ final class UserController extends AbstractController
 
         $user = $this->getUser();
 
-        $user = $em->getRepository(UserEntity::class)->find();
+        $userid = $user->getUserid();
+
+        $twoFactor = $em->getRepository(TwoFactorAuth::class);
+        $user = $em->getRepository(UserEntity::class);
+
+        $twoFactor = new TwoFactorAuth();
+        $user->setTwoFactorEnabled(true);
+        $twoFactor->setUserid($userid);
+
+        $em->flush();
 
     }
 }
