@@ -7,8 +7,7 @@ services:
     App\EventListener\AccountVerifiedListener:
         tags:
             - { name: 'kernel.event_subscriber' }
-            
-
+    
     App\:
         resource: '../src/'
         exclude:

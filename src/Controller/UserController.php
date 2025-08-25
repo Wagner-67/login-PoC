@@ -66,6 +66,10 @@ final class UserController extends AbstractController
             $errors[] = 'Passwort muss mindestens eine Zahl enthalten.';
         }
 
+        if (!preg_match('/[\W_]/', $password)) {
+            $errors[] = 'Passwort muss mindestens ein Sonderzeichen enthalten.';
+        }
+
         if (!empty($errors)) {
             return new JsonResponse(['error' => $errors], 400);
         }
