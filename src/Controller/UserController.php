@@ -377,6 +377,7 @@ final class UserController extends AbstractController
     ): JsonResponse {
 
         $user = $this->getUser();
+        $userid = $user->getUserid();
 
         if (!$user) {
             return new JsonResponse(['error' => 'Not authenticated']);
@@ -386,7 +387,7 @@ final class UserController extends AbstractController
 
             $user->setTwoFactorEnabled(true);
 
-            $userid = $user->getUserid();
+            
             $now = new \DateTime();
 
             $twoFactor = new TwoFactorAuth();
