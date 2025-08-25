@@ -16,7 +16,7 @@ final class TwoFactorAuthListener
     {
         $user = $event->getUser();
 
-        if (!$user || !$user->isTwoFactorEnabled()) {
+        if(!$user || !$user->isTwoFactorEnabled()) {
             return;
         }
 
@@ -24,7 +24,12 @@ final class TwoFactorAuthListener
 
         $twoFactorAuth = $this->em->getRepository(TwoFactorAuth::class)->findOneBy(['userid' => $userid]);
 
-        if (!$twoFactorAuth) {
+        if($twoFactorAuth->hasToVerify()) {
+            #Email setup und so
+            return;
+        }
+
+        if(!$twoFactorAuth) {
             return;
         }
 
@@ -32,10 +37,20 @@ final class TwoFactorAuthListener
         $loginCount = $twoFactorAuth->getLoginCount();
         $last2fa    = $twoFactorAuth->getLast2fa();
 
-        if ($loginCount >= 25) {
-            $twoFactorAuth->setHasToVerifie(true);
+        if($loginCount >= 25) {
+            $twoFactorAuth->setHasToVerify(true);
+            $twoFactorAuth->setLoginCount(0);
             $this->em->persist($twoFactorAuth);
             $this->em->flush();
         }
+
+                if ($lastLogin && $last2fa) {
+            $diff = $lastLogin->diff($last2fa);
+
+            if ($diff->days >= 25) {
+                $twoFactorAuth->setHasToVerifie(true);
+                $this->em->persist($twoFactorAuth);
+                $this->em->flush();
+            }
     }
 }
