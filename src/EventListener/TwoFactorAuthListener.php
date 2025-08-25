@@ -15,8 +15,9 @@ final class TwoFactorAuthListener
     public function onLexikJwtAuthenticationOnAuthenticationSuccess(AuthenticationSuccessEvent $event): void
     {
         $user = $event->getUser();
+        $now  = new \DateTime();
 
-        if(!$user || !$user->isTwoFactorEnabled()) {
+        if (!$user || !$user->isTwoFactorEnabled()) {
             return;
         }
 
@@ -24,12 +25,19 @@ final class TwoFactorAuthListener
 
         $twoFactorAuth = $this->em->getRepository(TwoFactorAuth::class)->findOneBy(['userid' => $userid]);
 
-        if($twoFactorAuth->hasToVerify()) {
-            #Email setup und so
+        if (!$twoFactorAuth) {
             return;
         }
 
-        if(!$twoFactorAuth) {
+        if ($twoFactorAuth->hasToVerify()) {
+            if (!$twoFactorAuth->getTwoFactorAuthToken()) {
+                $code = str_pad((string)random_int(0, 999), 3, '0', STR_PAD_LEFT);
+                $twoFactorAuth->setTwoFactorAuthToken($code);
+
+                $this->em->persist($twoFactorAuth);
+                $this->em->flush();
+            }
+
             return;
         }
 
@@ -37,20 +45,34 @@ final class TwoFactorAuthListener
         $loginCount = $twoFactorAuth->getLoginCount();
         $last2fa    = $twoFactorAuth->getLast2fa();
 
-        if($loginCount >= 25) {
+        if ($loginCount >= 25) {
             $twoFactorAuth->setHasToVerify(true);
             $twoFactorAuth->setLoginCount(0);
+            $twoFactorAuth->setLast2fa($now);
+
             $this->em->persist($twoFactorAuth);
             $this->em->flush();
+            return;
         }
 
-                if ($lastLogin && $last2fa) {
-            $diff = $lastLogin->diff($last2fa);
+        if ($lastLogin instanceof \DateTime && $last2fa instanceof \DateTime) {
+            if ($lastLogin > $last2fa) {
+                $diff = $lastLogin->diff($last2fa);
 
-            if ($diff->days >= 25) {
-                $twoFactorAuth->setHasToVerifie(true);
-                $this->em->persist($twoFactorAuth);
-                $this->em->flush();
+                if ($diff->days >= 25) {
+                    $twoFactorAuth->setHasToVerify(true);
+                    $twoFactorAuth->setLast2fa($now);
+
+                    $this->em->persist($twoFactorAuth);
+                    $this->em->flush();
+                }
             }
+        }
+        
+        $twoFactorAuth->setLoginCount($loginCount + 1);
+        $twoFactorAuth->setLastLogin($now);
+
+        $this->em->persist($twoFactorAuth);
+        $this->em->flush();
     }
 }
