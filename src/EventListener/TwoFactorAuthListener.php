@@ -6,10 +6,15 @@ use App\Entity\TwoFactorAuth;
 use Doctrine\ORM\EntityManagerInterface;
 use Lexik\Bundle\JWTAuthenticationBundle\Event\AuthenticationSuccessEvent;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 
 final class TwoFactorAuthListener
 {
-    public function __construct(private EntityManagerInterface $em) {}
+    public function __construct(
+        private EntityManagerInterface $em,
+        private MailerInterface $mailer,
+    ) {}
 
     #[AsEventListener(event: 'lexik_jwt_authentication.on_authentication_success')]
     public function onLexikJwtAuthenticationOnAuthenticationSuccess(AuthenticationSuccessEvent $event): void
@@ -31,13 +36,32 @@ final class TwoFactorAuthListener
 
         if ($twoFactorAuth->hasToVerify()) {
             if (!$twoFactorAuth->getTwoFactorAuthToken()) {
-                $code = str_pad((string)random_int(0, 999), 3, '0', STR_PAD_LEFT);
+                $code = $this->generateUniqueToken();
+
                 $twoFactorAuth->setTwoFactorAuthToken($code);
 
                 $this->em->persist($twoFactorAuth);
                 $this->em->flush();
+
+                $email = (new Email())
+                    ->from('noreply@example.com')
+                    ->to($user->getEmail())
+                    ->subject('Dein 2FA-Code')
+                    ->html("
+                        <p>Hallo {$user->getUsername()},</p>
+                        <p>dein Bestätigungscode lautet:</p>
+                        <h2>{$code}</h2>
+                        <p>Bitte gib diesen Code in der Anwendung ein, um den Login abzuschließen.</p>
+                    ");
+
+                $this->mailer->send($email);
             }
 
+            $event->setData([
+                'error'   => '2fa_required',
+                'message' => 'Two-factor authentication required',
+            ]);
+            $event->stopPropagation();
             return;
         }
 
@@ -65,6 +89,7 @@ final class TwoFactorAuthListener
 
                     $this->em->persist($twoFactorAuth);
                     $this->em->flush();
+                    return;
                 }
             }
         }
@@ -74,5 +99,16 @@ final class TwoFactorAuthListener
 
         $this->em->persist($twoFactorAuth);
         $this->em->flush();
+    }
+
+    private function generateUniqueToken(): string
+    {
+        do {
+            $token = str_pad((string) random_int(0, 999999), 3, '0', STR_PAD_LEFT);
+            $exists = $this->em->getRepository(TwoFactorAuth::class)
+                ->findOneBy(['twoFactorAuthToken' => $token]);
+        } while ($exists);
+
+        return $token;
     }
 }

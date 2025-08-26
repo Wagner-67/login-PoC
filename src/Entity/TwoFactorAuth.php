@@ -25,8 +25,8 @@ class TwoFactorAuth
     #[ORM\Column(name: 'last_2fa')]
     private ?\DateTime $last2fa = null;
 
-    #[ORM\Column(name: 'twofactorauth_tokens', length: 255, nullable: true)]
-    private ?int $twoFactorAuthToken = null;
+    #[ORM\Column(name: 'twofactorauth_token', length: 10, nullable: true, unique: true)]
+    private ?string $twoFactorAuthToken = null;
 
     #[ORM\Column(name: 'has_to_verify')]
     private ?bool $hasToVerify = false;
@@ -96,12 +96,12 @@ class TwoFactorAuth
         return $this;
     }
 
-    public function getTwoFactorAuthToken(): ?int
+    public function getTwoFactorAuthToken(): ?string
     {
         return $this->twoFactorAuthToken;
     }
 
-    public function setTwoFactorAuthToken(?int $token): static
+    public function setTwoFactorAuthToken(?string $token): static
     {
         $this->twoFactorAuthToken = $token;
 
