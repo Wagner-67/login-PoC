@@ -48,7 +48,7 @@ final class TwoFactorAuthListener
                     ->to($user->getEmail())
                     ->subject('Dein 2FA-Code')
                     ->html("
-                        <p>Hallo {$user->getUsername()},</p>
+                        <p>Hallo {$user->getName()},</p>
                         <p>dein Bestätigungscode lautet:</p>
                         <h2>{$code}</h2>
                         <p>Bitte gib diesen Code in der Anwendung ein, um den Login abzuschließen.</p>

@@ -14,7 +14,7 @@ class TwoFactorAuth
     private ?int $id = null;
 
     #[ORM\Column(name: 'user_id', length: 255)]
-    private ?string $userId = null;
+    private ?string $userid = null;
 
     #[ORM\Column(name: 'last_login')]
     private ?\DateTime $lastLogin = null;

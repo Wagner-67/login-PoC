@@ -136,5 +136,4 @@ final class TwoFactorController extends AbstractController
             // 'token' => $jwtManager->create($twoFactorAuth->getUser())
         ]);
     }
-
 }
