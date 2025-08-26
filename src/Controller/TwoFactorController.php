@@ -94,4 +94,47 @@ final class TwoFactorController extends AbstractController
             'message' => '2FA wurde erfolgreich deaktiviert',
         ]);
     }
+
+    #[Route('/public/TwoFactorAuthCode', name: 'public_TwoFactor_AuthCode', methods: ['POST'])]
+    public function checkTwoFactorToken(
+        Request $request,
+        EntityManagerInterface $em
+    ): JsonResponse {
+        $data = json_decode($request->getContent(), true);
+
+        if (!isset($data['userid'], $data['code'])) {
+            return new JsonResponse(['error' => 'Invalid request'], 400);
+        }
+
+        $twoFactorAuth = $em->getRepository(TwoFactorAuth::class)->findOneBy([
+            'userid' => $data['userid']
+        ]);
+
+        if (!$twoFactorAuth) {
+            return new JsonResponse(['error' => 'User not found'], 404);
+        }
+
+        if ($twoFactorAuth->getTwoFactorAuthToken() !== $data['code']) {
+            return new JsonResponse(['error' => 'Invalid code'], 401);
+        }
+
+        // ✅ Code korrekt → 2FA erfolgreich
+        $twoFactorAuth->setHasToVerify(false);
+        $twoFactorAuth->setTwoFactorAuthToken(null); // Code ungültig machen
+        $twoFactorAuth->setLast2fa(new \DateTime());
+        $twoFactorAuth->setLoginCount(0);
+
+        $em->persist($twoFactorAuth);
+        $em->flush();
+
+        // Hier müsstest du jetzt den JWT-Token ausstellen,
+        // z.B. über LexikJWTAuthenticationBundle TokenManager
+        // (falls du den nicht schon im Login-Prozess zwischengespeichert hast)
+        return new JsonResponse([
+            'success' => true,
+            'message' => 'Two-factor authentication successful',
+            // 'token' => $jwtManager->create($twoFactorAuth->getUser())
+        ]);
+    }
+
 }
