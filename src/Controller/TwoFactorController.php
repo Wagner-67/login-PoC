@@ -100,40 +100,44 @@ final class TwoFactorController extends AbstractController
         Request $request,
         EntityManagerInterface $em
     ): JsonResponse {
-        $data = json_decode($request->getContent(), true);
-
-        if (!isset($data['userid'], $data['code'])) {
-            return new JsonResponse(['error' => 'Invalid request'], 400);
+        $user = $this->getUser();
+        if (!$user) {
+            return new JsonResponse(['error' => 'Kein Benutzer gefunden'], 401);
         }
 
-        $twoFactorAuth = $em->getRepository(TwoFactorAuth::class)->findOneBy([
-            'userid' => $data['userid']
+        $data = json_decode($request->getContent(), true);
+        if (empty($data['2fa-code'])) {
+            return new JsonResponse(['error' => 'Du musst deinen gültigen 2FA code angeben']);
+        }
+
+        $twoFactor = $em->getRepository(TwoFactorAuth::class)->findOneBy([
+            'userid' => $user->getUserid(),
         ]);
 
-        if (!$twoFactorAuth) {
-            return new JsonResponse(['error' => 'User not found'], 404);
+        if (!$twoFactor || $data['2fa-code'] !== $twoFactor->getTwoFactorAuthToken()) {
+            return new JsonResponse(['error' => 'Du musst deinen gültigen 2FA code angeben']);
         }
 
-        if ($twoFactorAuth->getTwoFactorAuthToken() !== $data['code']) {
-            return new JsonResponse(['error' => 'Invalid code'], 401);
-        }
+        $now = new \DateTime();
+        $twoFactor
+            ->setHasToVerify(false)
+            ->setTwoFactorAuthToken(null)
+            ->setLastLogin($now)
+            ->setLoginCount(($twoFactor->getLoginCount() ?? 0) + 1);
 
-        // ✅ Code korrekt → 2FA erfolgreich
-        $twoFactorAuth->setHasToVerify(false);
-        $twoFactorAuth->setTwoFactorAuthToken(null); // Code ungültig machen
-        $twoFactorAuth->setLast2fa(new \DateTime());
-        $twoFactorAuth->setLoginCount(0);
-
-        $em->persist($twoFactorAuth);
+        $em->persist($twoFactor);
         $em->flush();
 
-        // Hier müsstest du jetzt den JWT-Token ausstellen,
-        // z.B. über LexikJWTAuthenticationBundle TokenManager
-        // (falls du den nicht schon im Login-Prozess zwischengespeichert hast)
+        #jwt token gen
+
+        $jwtManager = $this->container->get('lexik_jwt_authentication.jwt_manager');
+        $token = $jwtManager->create($user);
+
         return new JsonResponse([
             'success' => true,
-            'message' => 'Two-factor authentication successful',
-            // 'token' => $jwtManager->create($twoFactorAuth->getUser())
+            'message' => '2FA erfolgreich bestätigt',
+            'token'   => $token,
         ]);
     }
 }
+
