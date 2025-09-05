@@ -1,7 +1,7 @@
 # Login-PoC
 
 **Kurzbeschreibung**  
-Login-PoC ist ein Proof-of-Concept (API-only) basierend auf **Symfony**. Es demonstriert grundlegende Authentifizierungs-Workflows und verwendet **JWT** (LexikJWT) plus Refresh-Tokens (Gesdinet). Nicht für Produktion – nur Demo / Interview-Beispiel.
+Login-PoC ist ein Proof-of-Concept (API-only) basierend auf **Symfony**. Es demonstriert grundlegende Authentifizierungs-Workflows und verwendet **JWT** (LexikJWT) plus Refresh-Tokens (Gesdinet). Nicht für Produktion – nur Demo / und noch in arbeit.
 
 ---
 
@@ -27,33 +27,3 @@ Login-PoC ist ein Proof-of-Concept (API-only) basierend auf **Symfony**. Es demo
 - `POST /public/password_change` — Passwort-Reset anstoßen (E-Mail mit Token)  
 - `POST /public/password-reset/{token}` — Passwort zurücksetzen  
 - `GET  /auth/logout` — Logout (löscht Refresh Token)
-
----
-
-## Schnellstart (lokal)
-```bash
-# Repo klonen
-git clone https://github.com/Wagner-67/login-PoC.git
-cd login-PoC
-
-# Abhängigkeiten installieren
-composer install
-
-# .env lokal anlegen & anpassen: DATABASE_URL, MAILER_DSN, APP_SECRET, JWT_* etc.
-cp .env .env.local
-# Werte in .env.local setzen
-
-# JWT Keys erzeugen (Beispiel)
-mkdir -p config/jwt
-openssl genpkey -algorithm RSA -out config/jwt/private.pem -pkeyopt rsa_keygen_bits:4096
-openssl pkey -in config/jwt/private.pem -pubout -out config/jwt/public.pem
-chmod 600 config/jwt/private.pem
-
-# DB und Migrationen
-php bin/console doctrine:database:create
-php bin/console doctrine:migrations:migrate
-
-# Server starten
-symfony server:start
-# oder:
-php -S 127.0.0.1:8000 -t public
